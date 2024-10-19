@@ -1,0 +1,9 @@
+git log --oneline
+git checkout -b bu_main_# - backup the current spot for debuging later
+git checkout main - go back to the main branch
+git checkout {b859b70} - last correct comment
+git checkout -b rollback_# - create a branch from `main` to copy the current spot
+git checkout main - go back to the main branch
+git reset --hard {b859b70} - set the main branch to the latest working comment
+git push origin main - redeploy to the latest working comment ---- make sure to commit something new so the redeploy will activate.
+git merge bu_main_# - set the main branch to the latest comment and start debuging
