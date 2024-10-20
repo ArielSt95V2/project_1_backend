@@ -4,10 +4,7 @@ from os import getenv, path
 from pathlib import Path
 from django.core.management.utils import get_random_secret_key
 import dotenv
-import os
 
-# Add this line with your actual API key
-OPENAI_API_KEY = os.getenv('OPENAI_API_KEY')
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -197,12 +194,11 @@ DJOSER = {
 
 AUTH_COOKIE = 'access'
 AUTH_COOKIE_MAX_AGE = 60 * 60 * 24
-# AUTH_COOKIE_SECURE = False -- for local development
 AUTH_COOKIE_SECURE = getenv('AUTH_COOKIE_SECURE', 'True') == 'True'
 AUTH_COOKIE_HTTP_ONLY = True
 AUTH_COOKIE_PATH = '/'
 AUTH_COOKIE_SAMESITE = 'None'
-# AUTH_COOKIE_SAMESITE = 'Lax' -- for local development
+
 
 SOCIAL_AUTH_GOOGLE_OAUTH2_KEY = getenv('GOOGLE_AUTH_KEY')
 SOCIAL_AUTH_GOOGLE_OAUTH2_SECRET = getenv('GOOGLE_AUTH_SECRET_KEY')
@@ -226,3 +222,14 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 
 AUTH_USER_MODEL = 'users.UserAccount'
+
+
+# APIs
+OPENAI_API_KEY = getenv('OPENAI_API_KEY')
+
+
+
+
+# Development settings
+# AUTH_COOKIE_SAMESITE = 'Lax' -- for local development
+# AUTH_COOKIE_SECURE = False -- for local development
