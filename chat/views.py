@@ -78,3 +78,40 @@ class ChatMessageView(APIView):
             # Print the exception for debugging
             print(f"Error during OpenAI API call: {e}")
             return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+
+
+
+
+
+
+
+import nltk
+from nltk.corpus import stopwords
+from nltk.tokenize import word_tokenize
+from rest_framework.permissions import AllowAny
+import string
+
+# Download NLTK data (do this once during setup)
+nltk.download('punkt')
+nltk.download('stopwords')
+
+class CleanTextView(APIView):
+    permission_classes = [AllowAny]
+    def post(self, request):
+        text = request.data.get('text', '')
+        if not text:
+            return Response({'error': 'Text is required'}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Tokenize text
+        tokens = word_tokenize(text)
+
+        # Remove stop words and punctuation
+        stop_words = set(stopwords.words('english'))
+        cleaned_tokens = [word for word in tokens if word.lower() not in stop_words and word not in string.punctuation]
+
+        # Join cleaned tokens into a cleaned text
+        cleaned_text = ' '.join(cleaned_tokens)
+
+        return Response({'cleaned_text': cleaned_text}, status=status.HTTP_200_OK)
