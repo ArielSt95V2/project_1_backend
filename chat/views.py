@@ -90,7 +90,6 @@ class ChatMessageView(APIView):
 import nltk
 from nltk.corpus import stopwords
 from nltk.tokenize import word_tokenize
-from rest_framework.permissions import AllowAny
 import string
 
 # Download NLTK data (do this once during setup)
@@ -98,7 +97,6 @@ nltk.download('punkt')
 nltk.download('stopwords')
 
 class CleanTextView(APIView):
-    permission_classes = [AllowAny]
     def post(self, request):
         text = request.data.get('text', '')
         if not text:
