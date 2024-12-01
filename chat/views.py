@@ -93,9 +93,9 @@ from nltk.tokenize import word_tokenize
 from rest_framework.permissions import AllowAny
 import string
 
-# Download NLTK data (do this once during setup)
-nltk.download('punkt')
-nltk.download('stopwords')
+# # Download NLTK data (do this once during setup)
+# nltk.download('punkt')
+# nltk.download('stopwords')
 
 class CleanTextView(APIView):
     permission_classes = [AllowAny]
