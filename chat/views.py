@@ -85,20 +85,23 @@ class ChatMessageView(APIView):
 
 
 
-
-
+import string
+from pathlib import Path
 import nltk
 from nltk.corpus import stopwords
 from nltk.tokenize import word_tokenize
-from rest_framework.permissions import AllowAny
-import string
+from django.conf import settings
 
-# # Download NLTK data (do this once during setup)
-# nltk.download('punkt')
-# nltk.download('stopwords')
+BASE_DIR = settings.BASE_DIR
+# Dynamically set the path to nltk_data
+# nltk.download('stopwords') nltk.download('punkt')
+NLTK_DATA_DIR = Path(BASE_DIR) / 'nltk_data' 
+nltk.data.path.append(str(NLTK_DATA_DIR))
+
+
 
 class CleanTextView(APIView):
-    permission_classes = [AllowAny]
+    permission_classes = [permissions.IsAuthenticated]
     def post(self, request):
         text = request.data.get('text', '')
         if not text:
