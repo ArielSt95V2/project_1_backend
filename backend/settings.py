@@ -195,17 +195,17 @@ DJOSER = {
 if DEVELOPMENT_MODE is True:
     AUTH_COOKIE = 'access'
     AUTH_COOKIE_MAX_AGE = 60 * 60 * 24
-    AUTH_COOKIE_SECURE = getenv('AUTH_COOKIE_SECURE', 'True') == 'True'
-    AUTH_COOKIE_HTTP_ONLY = True
-    AUTH_COOKIE_PATH = '/'
-    AUTH_COOKIE_SAMESITE = 'None'
-else:
-    AUTH_COOKIE = 'access'
-    AUTH_COOKIE_MAX_AGE = 60 * 60 * 24
     AUTH_COOKIE_SECURE = False   # -- for local development
     AUTH_COOKIE_HTTP_ONLY = True
     AUTH_COOKIE_PATH = '/'
     AUTH_COOKIE_SAMESITE = 'Lax'  # -- for local development
+else:
+    AUTH_COOKIE = 'access'
+    AUTH_COOKIE_MAX_AGE = 60 * 60 * 24
+    AUTH_COOKIE_SECURE = getenv('AUTH_COOKIE_SECURE', 'True') == 'True'
+    AUTH_COOKIE_HTTP_ONLY = True
+    AUTH_COOKIE_PATH = '/'
+    AUTH_COOKIE_SAMESITE = 'None'
 
 
 SOCIAL_AUTH_GOOGLE_OAUTH2_KEY = getenv('GOOGLE_AUTH_KEY')
