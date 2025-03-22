@@ -102,6 +102,29 @@ class ChatThreadDetailView(generics.RetrieveUpdateDestroyAPIView):
         instance.is_active = False
         instance.save()
 
+    def update(self, request, *args, **kwargs):
+        instance = self.get_object()
+        assistant_id = request.data.get('assistant_id')
+        title = request.data.get('title')
+
+        if assistant_id:
+            try:
+                # Verify the assistant exists
+                OpenAIAssistantService.get_assistant(assistant_id)
+                instance.openai_assistant_id = assistant_id
+            except Exception as e:
+                return Response(
+                    {'error': f'Invalid assistant ID: {str(e)}'},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+
+        if title:
+            instance.title = title
+
+        instance.save()
+        serializer = self.get_serializer(instance)
+        return Response(serializer.data)
+
 class ChatMessageView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
