@@ -3,15 +3,16 @@ from .views import (
     ChatThreadListCreateView,
     ChatThreadDetailView,
     ChatMessageView,
-    ThreadMessagesView
+    ThreadMessagesView,
+    AssistantListView,
+    AssistantDetailView
 )
 
 urlpatterns = [
-    # Thread operations
-    path('threads/', ChatThreadListCreateView.as_view(), name='thread-list-create'),
+    path('assistants/', AssistantListView.as_view(), name='assistant-list'),
+    path('assistants/<str:assistant_id>/', AssistantDetailView.as_view(), name='assistant-detail'),
+    path('threads/', ChatThreadListCreateView.as_view(), name='thread-list'),
     path('threads/<int:pk>/', ChatThreadDetailView.as_view(), name='thread-detail'),
-    
-    # Message operations
+    path('messages/', ChatMessageView.as_view(), name='message-create'),
     path('threads/<int:thread_id>/messages/', ThreadMessagesView.as_view(), name='thread-messages'),
-    path('message/', ChatMessageView.as_view(), name='chat-message'),
 ]

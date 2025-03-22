@@ -4,8 +4,8 @@ from .models import ChatHistory, ChatThread
 class ChatHistorySerializer(serializers.ModelSerializer):
     class Meta:
         model = ChatHistory
-        fields = ['id', 'message', 'timestamp', 'role', 'thread']
-        read_only_fields = ['id', 'timestamp', 'role']
+        fields = ['id', 'message', 'role', 'timestamp', 'openai_message_id']
+        read_only_fields = ['id', 'timestamp']
 
 class ChatThreadSerializer(serializers.ModelSerializer):
     messages = ChatHistorySerializer(many=True, read_only=True)
@@ -13,15 +13,12 @@ class ChatThreadSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = ChatThread
-        fields = ['id', 'title', 'created_at', 'updated_at', 'is_active', 'messages', 'last_message']
-        read_only_fields = ['id', 'created_at', 'updated_at']
+        fields = ['id', 'title', 'is_active', 'created_at', 'updated_at', 
+                 'openai_assistant_id', 'openai_thread_id', 'messages', 'last_message']
+        read_only_fields = ['id', 'created_at', 'updated_at', 'openai_thread_id']
 
     def get_last_message(self, obj):
-        last_message = obj.messages.last()
+        last_message = obj.messages.order_by('-timestamp').first()
         if last_message:
-            return {
-                'message': last_message.message,
-                'timestamp': last_message.timestamp,
-                'role': last_message.role
-            }
+            return ChatHistorySerializer(last_message).data
         return None

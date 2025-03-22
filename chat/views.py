@@ -27,11 +27,37 @@ from django.conf import settings
 from openai import OpenAI
 from .models import ChatThread
 from .serializers import ChatThreadSerializer
+from .services import OpenAIAssistantService
 
 # OpenAI API call
 openai_api_key = settings.OPENAI_API_KEY
 client = OpenAI(api_key=openai_api_key)
 
+class AssistantListView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+        try:
+            assistants = OpenAIAssistantService.list_assistants()
+            return Response(assistants)
+        except Exception as e:
+            return Response(
+                {'error': str(e)},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+
+class AssistantDetailView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request, assistant_id):
+        try:
+            assistant = OpenAIAssistantService.get_assistant(assistant_id)
+            return Response(assistant)
+        except Exception as e:
+            return Response(
+                {'error': str(e)},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
 
 class ChatThreadListCreateView(generics.ListCreateAPIView):
     serializer_class = ChatThreadSerializer
@@ -41,13 +67,29 @@ class ChatThreadListCreateView(generics.ListCreateAPIView):
         return ChatThread.objects.filter(user=self.request.user, is_active=True)
 
     def perform_create(self, serializer):
-        # Create OpenAI thread
-        openai_thread = client.beta.threads.create()
-        # Create our thread with OpenAI thread ID
-        serializer.save(
-            user=self.request.user,
-            title=self.request.data.get('title', 'New Chat')
-        )
+        assistant_id = self.request.data.get('assistant_id')
+        if not assistant_id:
+            return Response(
+                {'error': 'Assistant ID is required.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        try:
+            # Create OpenAI thread
+            openai_thread_id = OpenAIAssistantService.create_thread()
+            
+            # Create our thread with OpenAI IDs
+            serializer.save(
+                user=self.request.user,
+                title=self.request.data.get('title', 'New Chat'),
+                openai_assistant_id=assistant_id,
+                openai_thread_id=openai_thread_id
+            )
+        except Exception as e:
+            return Response(
+                {'error': str(e)},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
 
 class ChatThreadDetailView(generics.RetrieveUpdateDestroyAPIView):
     serializer_class = ChatThreadSerializer
@@ -69,7 +111,7 @@ class ChatMessageView(APIView):
         
         if not thread_id or not message:
             return Response(
-                {'error': 'Thread ID and message are required.'}, 
+                {'error': 'Thread ID and message are required.'},
                 status=status.HTTP_400_BAD_REQUEST
             )
 
@@ -77,50 +119,50 @@ class ChatMessageView(APIView):
             # Get the thread
             thread = ChatThread.objects.get(id=thread_id, user=request.user)
             
-            # Save user message
+            # Add message to OpenAI thread
+            openai_message = OpenAIAssistantService.add_message(
+                thread.openai_thread_id,
+                message,
+                'user'
+            )
+
+            # Save user message locally
             user_chat = ChatHistory.objects.create(
                 user=request.user,
                 thread=thread,
                 message=message,
-                role='user'
+                role='user',
+                openai_message_id=openai_message['id']
             )
 
-            # Get thread history for context
-            thread_messages = ChatHistory.objects.filter(thread=thread).order_by('timestamp')
-            messages = [
-                {'role': msg.role, 'content': msg.message}
-                for msg in thread_messages
-            ]
-
-            # Get OpenAI response
-            response = client.chat.completions.create(
-                model='gpt-3.5-turbo',
-                messages=messages,
+            # Run the assistant
+            assistant_response = OpenAIAssistantService.run_assistant(
+                thread.openai_thread_id,
+                thread.openai_assistant_id
             )
 
-            assistant_message = response.choices[0].message.content
-
-            # Save assistant's reply
+            # Save assistant's reply locally
             assistant_chat = ChatHistory.objects.create(
                 user=request.user,
                 thread=thread,
-                message=assistant_message,
-                role='assistant'
+                message=assistant_response['message'],
+                role='assistant',
+                openai_message_id=assistant_response['run_id']
             )
 
             return Response({
-                'message': assistant_message,
+                'message': assistant_response['message'],
                 'thread_id': thread_id
             }, status=status.HTTP_200_OK)
 
         except ChatThread.DoesNotExist:
             return Response(
-                {'error': 'Thread not found.'}, 
+                {'error': 'Thread not found.'},
                 status=status.HTTP_404_NOT_FOUND
             )
         except Exception as e:
             return Response(
-                {'error': str(e)}, 
+                {'error': str(e)},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
 
@@ -131,13 +173,12 @@ class ThreadMessagesView(generics.ListAPIView):
     def get_queryset(self):
         thread_id = self.kwargs.get('thread_id')
         try:
-            # First check if the thread belongs to the user
             thread = ChatThread.objects.get(id=thread_id, user=self.request.user)
             return ChatHistory.objects.filter(
                 thread=thread
             ).order_by('timestamp')
         except ChatThread.DoesNotExist:
-            return ChatHistory.objects.none()  # Return empty queryset if thread not found
+            return ChatHistory.objects.none()
 
     def list(self, request, *args, **kwargs):
         thread_id = self.kwargs.get('thread_id')
@@ -146,7 +187,7 @@ class ThreadMessagesView(generics.ListAPIView):
             return super().list(request, *args, **kwargs)
         except ChatThread.DoesNotExist:
             return Response(
-                {'error': 'Thread not found or unauthorized.'}, 
+                {'error': 'Thread not found or unauthorized.'},
                 status=status.HTTP_404_NOT_FOUND
             )
 

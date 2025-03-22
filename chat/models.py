@@ -7,23 +7,18 @@ class ChatThread(models.Model):
         on_delete=models.CASCADE,
         related_name='chat_threads'
     )
-    title = models.CharField(max_length=255, blank=True)
+    title = models.CharField(max_length=255)
+    is_active = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-    is_active = models.BooleanField(default=True)
+    # OpenAI specific fields
+    openai_assistant_id = models.CharField(max_length=255, null=True, blank=True)
+    openai_thread_id = models.CharField(max_length=255, null=True, blank=True)
 
     def __str__(self):
-        return f'Thread {self.id} - {self.title or "Untitled"}'
-
-    class Meta:
-        ordering = ['-updated_at']
+        return f"{self.title} - {self.user.username}"
 
 class ChatHistory(models.Model):
-    ROLE_CHOICES = (
-        ('user', 'User'),
-        ('assistant', 'Assistant'),
-    )
-
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
@@ -37,11 +32,13 @@ class ChatHistory(models.Model):
         blank=True
     )
     message = models.TextField()
+    role = models.CharField(max_length=20)  # 'user' or 'assistant'
     timestamp = models.DateTimeField(auto_now_add=True)
-    role = models.CharField(max_length=10, choices=ROLE_CHOICES, default='user')
-
-    def __str__(self):
-        return f'[{self.role}] {self.user.email} at {self.timestamp}'
+    # OpenAI specific fields
+    openai_message_id = models.CharField(max_length=255, null=True, blank=True)
 
     class Meta:
         ordering = ['timestamp']
+
+    def __str__(self):
+        return f"{self.role} - {self.thread.title if self.thread else 'No Thread'}"
