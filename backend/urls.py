@@ -6,4 +6,5 @@ urlpatterns = [
     path('api/', include('djoser.urls')),
     path('api/', include('users.urls')),
     path('api/chat/', include('chat.urls')),
+    path('api/langchain/', include('langchain_chat.urls')),
 ]

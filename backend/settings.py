@@ -44,6 +44,7 @@ INSTALLED_APPS = [
     'djoser',
     'users',
     'chat',
+    'langchain_chat',
 ]
 
 MIDDLEWARE = [
